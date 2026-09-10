@@ -24,6 +24,36 @@ test.describe('Game Listing and Navigation', () => {
     });
   });
 
+  test('should filter games by category and publisher', async ({ page }) => {
+    let totalGameCount = 0;
+
+    await test.step('Navigate to the game catalog', async () => {
+      await page.goto('/');
+      await expect(page.getByTestId('game-filters')).toBeVisible();
+      totalGameCount = await page.getByTestId('game-card').count();
+    });
+
+    await test.step('Filter by a category', async () => {
+      await page.getByRole('checkbox', { name: 'Strategy' }).check();
+      await expect(page.locator('[data-testid="game-card"]:visible')).toHaveCount(4);
+      await expect(page.getByTestId('game-filter-count')).toHaveText('Showing 4 games');
+    });
+
+    await test.step('Combine the category with a publisher filter', async () => {
+      await page.getByTestId('publisher-filter').selectOption({ label: 'CodeForge Studios' });
+      await expect(page.locator('[data-testid="game-card"]:visible')).toHaveCount(1);
+      await expect(page.getByTestId('game-filter-count')).toHaveText('Showing 1 game');
+    });
+
+    await test.step('Clear filters and restore the full catalog', async () => {
+      await page.getByTestId('reset-game-filters').click();
+      await expect(page.locator('[data-testid="game-card"]:visible')).toHaveCount(totalGameCount);
+      await expect(page.getByTestId('game-filter-count')).toHaveText(
+        `Showing ${totalGameCount} games`,
+      );
+    });
+  });
+
   test('should navigate to correct game details page when clicking on a game', async ({ page }) => {
     let gameId: string | null;
     let gameTitle: string | null;
